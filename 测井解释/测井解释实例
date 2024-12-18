@@ -1,0 +1,57 @@
+import formulas as ff
+import numpy as np
+import os
+import pandas as pd
+from tqdm import tqdm
+
+file_path='../../../3-data/3-江钻钻头/6-江钻第五批数据/岩石力学数据库/'
+# file_path='../../../3-data/4-江钻第二批数据（涪陵焦页）/11+10口井2024.08/岩石力学数据库-11口井/'
+
+wellname=os.listdir(file_path)
+
+print(wellname)
+for i in tqdm(range(len(wellname))):
+    df=pd.read_excel(file_path+wellname[i],sheet_name='Sheet1')
+    TP=df['声波时差（μs/ft）']
+    RHO=df['岩性密度(g/cm^3)']
+    GR=df['伽马（API）']
+    rVsh=ff.c_Vsh(GR)
+    rfai=ff.c_fai(TP)
+    rTS=ff.c_TS(TP,RHO)
+
+    rUCS=ff.c_UCS(TP)
+    rKdPDC=ff.c_KdPDC(TP)
+    rGd=ff.c_Gd(TP)
+    rH=ff.c_H(TP)
+    rE=ff.c_E(RHO,TP,rTS)
+    rv=ff.c_v(TP,rTS)
+    rK= ff.c_K(TP)
+    rC=ff.c_C(RHO,rv,rVsh,TP)
+    rmiu=ff.c_miu(GR)
+    rcj = abs(rH.diff())
+    nf = pd.DataFrame({
+        '油田': df['油田'],
+        '区块': df['区块'],
+        '井号': df['井号'],
+        '地层': df['地层'],
+        '岩性': df['岩性'],
+        '深度（m）': df['深度（m）'],
+        '声波时差（μs/ft）': df['声波时差（μs/ft）'],
+        '岩性密度(g/cm^3)': df['岩性密度(g/cm^3)'],
+        '伽马（API）': df['伽马（API）'],
+        '抗压强度（MPa）': rUCS,
+        '可钻性': rKdPDC,
+        '研磨性（mg）': rGd,
+        '硬度（MPa）': rH,
+        '弹性模量（GPa）': rE,
+        '泊松比': rv,
+        '塑性系数': rK,
+        '内聚力（MPa）': rC,
+        '内摩擦角（°）': rmiu,
+        '泥质含量': rVsh,
+        '孔隙度': rfai,
+        '冲击性（MPa/m）': rcj})
+    nf.to_csv('../r_data/5th/' + wellname[i][:-5] + '校正数据.csv', encoding='GBK', index=False)
+    # nf.to_csv('../r_data/2nd/11/' + wellname[i][:-5] + '校正数据.csv', encoding='GBK', index=False)
+print('校正完毕')
+
