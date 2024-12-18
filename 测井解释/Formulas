@@ -1,0 +1,82 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import pandas as pd
+def c_Vsh(GR):
+    GCUR=2
+    GRmax = GR.max()
+    GRmin = GR.min()
+    IGR=(GR-GRmin)/(GRmax-GRmin)
+    Vsh=(2**(GCUR*IGR)-1)/(2**GCUR-1)
+    Vsh=Vsh.rename('泥质含量')
+    return Vsh
+
+def c_fai(TP):
+    TF=185
+    # TMA=48#泥页岩
+    TMA = 43#白云岩、灰岩
+    fai=(TP-TMA)/(TF-TMA)
+    fai=fai.rename('孔隙度')
+    return fai
+#需要更正
+def c_TS(TP,RHO):
+    TS=TP/((1-1.15*(((1/RHO)+(1/RHO)**3)/np.e**(1/RHO)))**1.5)#横波时差偏小
+    # TS=0.578*TP-0.078
+    TS=TS.rename('横波时差（μs/ft）')
+    return TS
+
+def c_UCS(TP):
+    # UCS=(7682/TP)**1.82
+    # UCS=10*(244+109.14/TP)
+    #经验公式单位换算
+    UCS=2.1174*np.e**(0.001*(1e6/TP*0.304))
+    UCS=UCS.rename('抗压强度（MPa）')
+    return UCS
+
+def c_KdPDC(TP):
+    KdPDC=1.1644*np.e**(23.22*np.e**(-0.0474*TP))
+    KdPDC=KdPDC.rename('可钻性')
+    return KdPDC
+
+def c_Gd(TP):
+    Kd=18.9*np.e**(-0.0051*TP)
+    Gd=(0.275*Kd)**(1/0.3716)
+    Gd=Gd.rename('研磨性（mg）')
+    return Gd
+
+def c_H(TP):
+    H=494.76+2596.94/(1+np.e**((TP-60.9)/2.576))
+    H=H.rename('硬度（MPa）')
+    return H
+
+def c_E(rho,tp,ts):
+    #英尺-米，微秒-秒单位换算
+    vp=1/tp*1e6*0.3048
+    vs=1/ts*1e6*0.3048
+    E=rho*vs**2*(3*vp**2-4*vs**2)/(vp**2-vs**2)*1e-6
+    #注意单位为Gpa，密度单位为g/cm3，故其要*1e-6
+    E=E.rename('弹性模量(GPa)')
+    return E
+
+def c_v(tp,ts):
+    #英尺-米，微秒-秒单位换算
+    vp=1/tp*1e6*0.3048
+    vs=1/ts*1e6*0.3048
+    v=0.5*(vp**2-2*vs**2)/(vp**2-vs**2)
+    v=v.rename('泊松比')
+    return v
+
+def c_K(tp):
+    k=3.22*1e-3*tp**1.4805-0.1714
+    k=k.rename('塑性系数')
+    return k
+
+def c_C(rho,u,vsh,tp):
+    c=4.69433*1e7*rho**2*((1+u)/(1-u))*(1-2*u)*(1+0.78*vsh)/tp**4
+    c=c.rename('内聚力（MPa）')
+    return c
+
+def c_miu(gr):
+    miu=-24.17*np.log(gr)+139.68
+    miu=miu.rename('内摩擦角（°）')
+    return miu
